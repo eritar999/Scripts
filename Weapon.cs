@@ -58,13 +58,21 @@ public class Weapon : MonoBehaviourPunCallbacks
                 {
                     if (Input.GetMouseButtonDown(0) && currentCooldown <= 0 && !isReloading)
                     {
-                        if (loadout[currentIndex].FireBullet()&& !isReloading)
+                        if (loadout[currentIndex].FireBullet() && !isReloading)
                         {
                             //   currentWeapon.GetComponent<Animator>().Play(loadout[currentIndex].recoilA.name, 0, 0);
                             photonView.RPC("Shoot", RpcTarget.All);
-                            
+
                         }
-                        else if (currentGunData.GetClip() == 0) StartCoroutine(Reload(loadout[currentIndex].reload));
+                        else if (currentGunData.GetClip() == 0)
+                        {
+                            if (currentGunData.GetStash() != 0)
+                            {
+                                StartCoroutine(Reload(loadout[currentIndex].reload));
+                            }
+                        }
+                        else if (currentGunData.GetMax() != currentGunData.GetClip())
+                            StartCoroutine(Reload(loadout[currentIndex].reload));
                     }
                 }
                 else
@@ -77,11 +85,19 @@ public class Weapon : MonoBehaviourPunCallbacks
                             photonView.RPC("Shoot", RpcTarget.All);
 
                         }
-                        else if(currentGunData.GetClip()==0) StartCoroutine(Reload(loadout[currentIndex].reload));
+                        else if (currentGunData.GetClip() == 0)
+                        {
+                            if (currentGunData.GetStash() != 0)
+                            {
+                                    StartCoroutine(Reload(loadout[currentIndex].reload));
+                            }
+                        }
+                        else if (currentGunData.GetMax() != currentGunData.GetClip())
+                            StartCoroutine(Reload(loadout[currentIndex].reload));
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.R)&& !isReloading) photonView.RPC("ReloadRPC", RpcTarget.All);
+                if (Input.GetKeyDown(KeyCode.R)&& !isReloading&&(currentGunData.GetMax() != currentGunData.GetClip())) photonView.RPC("ReloadRPC", RpcTarget.All);
 
 
                 if (currentGunData.GetStash() <=10) {

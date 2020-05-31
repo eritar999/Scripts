@@ -37,16 +37,18 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public List<PlayerInfo> playerInfo = new List<PlayerInfo>();
     public int myind;
-
+    public PlayerInfo sd;
 
     private Text ui_mykills;
     private Text ui_mydeaths;
+    private Text ui_endtext;
     private Transform ui_cntdwn;
     private Transform ui_leaderboard;
     private Transform ui_endgame;
     private Text ui_xp;
     private Text t_wave;
-  
+    private int kl;
+    object[] plrs;
 
     private GameState state = GameState.Waiting;
 
@@ -80,7 +82,7 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
         {
             return;
         }
-
+        
         if (Input.GetKeyDown(KeyCode.Tab))
         {
             if (ui_leaderboard.gameObject.activeSelf)
@@ -99,11 +101,26 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
         PhotonNetwork.RemoveCallbackTarget(this);
     }
 
-  
+    int ar = 0;
+    public override void OnPlayerLeftRoom(Player other)
+    {
+        PlayerInfo rem=null;
+        foreach (PlayerInfo player in playerInfo)
+        {
+            if (other.ActorNumber == player.actor)
+            {
+                rem = player;
+            }
+        }
+        playerInfo.Remove(rem);
+        UpdatePlayers_S((int)state, playerInfo);
+    }
+
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
         SceneManager.LoadScene(mainmenu);
+
     }
     public void OnEvent(EventData photonEvent)
     {
@@ -111,10 +128,10 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         EventCodes e = (EventCodes)photonEvent.Code;
         object[] o = (object[])photonEvent.CustomData;
-
         switch (e)
         {
             case EventCodes.NewPlayer:
+                
                 NewPlayer_R(o);
                 OnEnable();
                 break;
@@ -191,7 +208,6 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         UpdatePlayers_S((int)state, playerInfo);
     }
-
     public void UpdatePlayers_S(int state, List<PlayerInfo> info)
     {
         object[] package = new object[info.Count + 1];
@@ -209,7 +225,6 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
             piece[5] = info[i].deaths;
 
             package[i + 1] = piece;
-            
         }
 
         PhotonNetwork.RaiseEvent(
@@ -246,7 +261,6 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
         StateCheck();
     }
-
     public void ChangeStat_S(int actor, byte stat, byte amt)
     {
         object[] package = new object[] { actor, stat, amt };
@@ -408,6 +422,8 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
         
 
         ui_endgame.gameObject.SetActive(true);
+        ui_endtext = GameObject.Find("HUD/End Game/Design/Message").GetComponent<Text>();
+        ui_endtext.text = "Winner - " + sd.profile.username;
         Leaderboard(ui_endgame.Find("Leaderboard"));
 
         StartCoroutine(End(5f));
@@ -424,6 +440,7 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
             if (a.kills >= killcount)
             {
                  detectwin = true;
+                sd = a;
                 break;
             }
         }
@@ -438,7 +455,7 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
     }
     private void Leaderboard(Transform p_lb)
     {
-
+        UpdatePlayers_S((int)state, playerInfo);
         for (int i = 2; i < p_lb.childCount; i++)
         {
             Destroy(p_lb.GetChild(i).gameObject);
@@ -455,21 +472,23 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
         bool t_alternateColors = false;
         foreach (PlayerInfo a in sorted)
         {
-            GameObject newcard = Instantiate(playercard, p_lb) as GameObject;
 
-            if (t_alternateColors) newcard.GetComponent<Image>().color = new Color32(0, 0, 0, 180);
-            t_alternateColors = !t_alternateColors;
+                GameObject newcard = Instantiate(playercard, p_lb) as GameObject;
 
-            newcard.transform.Find("Level").GetComponent<Text>().text = a.profile.level.ToString("00");
-            newcard.transform.Find("Username").GetComponent<Text>().text = a.profile.username;
-            newcard.transform.Find("Score Value").GetComponent<Text>().text = (a.kills * 100).ToString();
-            newcard.transform.Find("Kills Value").GetComponent<Text>().text = a.kills.ToString();
-            newcard.transform.Find("Deaths Value").GetComponent<Text>().text = a.deaths.ToString();
+                if (t_alternateColors) newcard.GetComponent<Image>().color = new Color32(0, 0, 0, 180);
+                t_alternateColors = !t_alternateColors;
 
-            newcard.SetActive(true);
+                newcard.transform.Find("Level").GetComponent<Text>().text = a.profile.level.ToString("00");
+                newcard.transform.Find("Username").GetComponent<Text>().text = a.profile.username;
+                newcard.transform.Find("Score Value").GetComponent<Text>().text = (a.kills * 100).ToString();
+                newcard.transform.Find("Kills Value").GetComponent<Text>().text = a.kills.ToString();
+                newcard.transform.Find("Deaths Value").GetComponent<Text>().text = a.deaths.ToString();
+
+                newcard.SetActive(true);
         }
 
         p_lb.gameObject.SetActive(true);
+
     }
     private List<PlayerInfo> SortPlayers(List<PlayerInfo> p_info)
     {
@@ -500,6 +519,7 @@ public class CManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         ui_mykills = GameObject.Find("HUD/Stats/Kills/Text").GetComponent<Text>();
         ui_mydeaths = GameObject.Find("HUD/Stats/Deaths/Text").GetComponent<Text>();
+
        ui_leaderboard = GameObject.Find("HUD").transform.Find("Leaderboard").transform;
         t_wave = GameObject.Find("HUD/Waves/Text").GetComponent<Text>();
         ui_endgame = GameObject.Find("HUD").transform.Find("End Game").transform;

@@ -9,7 +9,7 @@ using UnityEngine;
 {
         public static bool paused = false;
         private bool disconnecting = false;
-
+ //   public GameObject capsule;
         public void TogglePause()
         {
             if (disconnecting) return;
@@ -31,8 +31,10 @@ using UnityEngine;
                 PhotonNetwork.CurrentRoom.IsOpen = false;
         }
         PhotonNetwork.AutomaticallySyncScene = false;
-        //PhotonNetwork.Disconnect();
+       //PhotonNetwork.Disconnect();
         PhotonNetwork.LeaveRoom();
+       // PhotonNetwork.Destroy(capsule);
         SceneManager.LoadScene(0);
+
         }
     }
